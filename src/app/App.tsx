@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import GlobalStyle from "./styles/GlobalStyle";
+import GlobalStyle from "../shared/styles/GlobalStyle";
 
 function App() {
   return (
