@@ -15,4 +15,3 @@ const GlobalStyle = createGlobalStyle`
   button { font: inherit; }
 `;
 export default GlobalStyle;
-a

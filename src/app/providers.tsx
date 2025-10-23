@@ -3,7 +3,7 @@ import { ThemeProvider } from "styled-components";
 import GlobalStyle from "@/shared/styles/GlobalStyle";
 import { theme } from "@/shared/styles/theme";
 import { queryClient } from "@/shared/lib/queryClient";
-import type { ReactNode } from "react";
+import { ReactNode } from "react";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (

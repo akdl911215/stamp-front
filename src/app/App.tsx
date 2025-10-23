@@ -4,7 +4,6 @@ import GlobalStyle from "../shared/styles/GlobalStyle";
 function App() {
   return (
     <>
-      <GlobalStyle />
       <Container>
         <Title>Customer Admin</Title>
         <p>React + Vite + TypeScript + Styled Components</p>
