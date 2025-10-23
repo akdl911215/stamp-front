@@ -1,28 +1,12 @@
-import styled from "styled-components";
-import GlobalStyle from "../shared/styles/GlobalStyle";
+import { AppRouter } from "./router";
 
 function App() {
-  return (
-    <>
-      <Container>
-        <Title>Customer Admin</Title>
-        <p>React + Vite + TypeScript + Styled Components</p>
-      </Container>
-    </>
-  );
+
+  console.log("현재 환경:", import.meta.env.VITE_ENV);
+  console.log("API URL:", import.meta.env.VITE_API_URL);
+
+
+  return <AppRouter />;
 }
 
 export default App;
-
-const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-`;
-
-const Title = styled.h1`
-  color: #0077ff;
-  font-size: 2rem;
-`;
