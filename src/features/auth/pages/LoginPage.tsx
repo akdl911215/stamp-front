@@ -1,4 +1,3 @@
-// src/features/auth/pages/LoginPage.tsx
 import styled from "styled-components";
 import LoginForm from "../components/LoginForm";
 

@@ -41,6 +41,9 @@ export default function LoginForm() {
 
       setAccessToken(res.accessToken);
       setAdminUsername(res.username);
+
+      console.log('token now:', useAuthStore.getState().accessToken);
+      
       nav(redirectTo, { replace: true });
     } catch (e: any) {
       // 서버에서 메시지 내려주면 사용

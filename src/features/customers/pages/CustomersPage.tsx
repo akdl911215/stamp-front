@@ -17,6 +17,11 @@ export default function CustomersPage() {
     queryFn: getCustomers,
   });
 
+  console.log('customers data : ', data);
+  console.log('customers isLoading : ', isLoading);
+  console.log('customers isError : ', isError);
+  console.log('customers error : ', error);
+
   if (isLoading)
     return (
       <Center>
