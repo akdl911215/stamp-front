@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import styled from "styled-components";
-import { getCustomers } from "../api";
+import { createVisit, getCustomers } from "../api";
 import { Spinner } from "@/shared/ui/Spinner";
+import { setUuidv4 } from "@/shared/lib/setUuidv4";
+import { CustomerDetailDrawer } from "../components/CustomerDetailDrawer";
 
 interface Customer {
   id: string;
@@ -28,9 +30,39 @@ export default function CustomersPage() {
     queryFn: getCustomers,
   });
 
+  const visitMut = useMutation({
+    mutationFn: (customerId: string) => createVisit({ customerId, idempotencyKey: setUuidv4() }),
+    
+    onMutate: async (customerId) => {
+      // 낙관적 업데이트: 리스트의 stampCount만 +1
+      await qc.cancelQueries({ queryKey: ["customers"] });
+      const prev = qc.getQueryData<Customer[]>(["customers"]);
+      if (prev) {
+        const next = prev.map(c => c.id === customerId ? { ...c, stampCount: c.stampCount + 1 } : c);
+        qc.setQueryData(["customers"], next);
+      }
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["customers"], ctx.prev);
+      alert("체크인 처리 중 문제가 발생했습니다.");
+    },
+    onSettled: () => {
+      // 서버 계산(임계치 도달 시 쿠폰 발급/차감 등)이 반영되도록 재조회
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      if (selectedId) qc.invalidateQueries({ queryKey: ["customer-detail", selectedId] });
+    },
+  });
+
+
   const [q, setQ] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const qc = useQueryClient();
+
+  const [openDetail, setOpenDetail] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     if (!data) return [];
@@ -105,6 +137,14 @@ export default function CustomersPage() {
     return <Center>현재 등록된 고객이 없습니다.</Center>;
   }
 
+ 
+  const onCheckIn = (id: string) => visitMut.mutate(id);
+
+  const onOpenDetail = (id: string) => {
+    setSelectedId(id);
+    setOpenDetail(true);
+  };
+
   return (
     <Wrap>
       <Header>
@@ -144,59 +184,64 @@ export default function CustomersPage() {
         </KPI>
       </KPIGrid>
 
-      <Table>
+       <Table>
         <thead>
           <tr>
-            <th onClick={() => onSort("name")}>
-              이름 {arrow(sortKey, sortDir, "name")}
-            </th>
+            <th>이름</th>
             <th>전화번호</th>
-            <th onClick={() => onSort("stampCount")}>
-              스탬프 {arrow(sortKey, sortDir, "stampCount")}
-            </th>
-            {/* <th>테넌트ID</th> */}
-            <th onClick={() => onSort("couponCount")}>
-              쿠폰합계 {arrow(sortKey, sortDir, "couponCount")}
-            </th>
-            <th onClick={() => onSort("issuedCount")}>
-              발급 {arrow(sortKey, sortDir, "issuedCount")}
-            </th>
-            <th onClick={() => onSort("redeemedCount")}>
-              사용 {arrow(sortKey, sortDir, "redeemedCount")}
-            </th>
-            <th onClick={() => onSort("expiredCount")}>
-              만료 {arrow(sortKey, sortDir, "expiredCount")}
-            </th>
-            <th onClick={() => onSort("revokedCount")}>
-              취소 {arrow(sortKey, sortDir, "revokedCount")}
-            </th>
-            <th onClick={() => onSort("createdAt")}>
-              등록일 {arrow(sortKey, sortDir, "createdAt")}
-            </th>
+            <th>스탬프</th>
+            <th>쿠폰합계</th>
+            <th>발급</th>
+            <th>사용</th>
+            <th>만료</th>
+            <th>취소</th>
+            <th>등록일</th>
+            <th>액션</th>
           </tr>
         </thead>
         <tbody>
           {filtered.map((c) => (
             <tr key={c.id}>
-              <td>{c.name ?? "-"}</td>
+              <td>
+                <a role="button" onClick={() => onOpenDetail(c.id)} title="상세 보기">
+                  {c.name ?? "-"}
+                </a>
+              </td>
               <td>{c.phone}</td>
               <td>{c.stampCount}</td>
-              {/* <td title={c.tenantId}>{truncate(c.tenantId, 10)}</td> */}
-              <td><Badge>{c.couponCount}</Badge></td>
-              <td><Badge tone="blue">{c.issuedCount}</Badge></td>
-              <td><Badge tone="green">{c.redeemedCount}</Badge></td>
-              <td><Badge tone="orange">{c.expiredCount}</Badge></td>
-              <td><Badge tone="red">{c.revokedCount}</Badge></td>
+              <td className="num"><Badge>{c.couponCount}</Badge></td>
+              <td className="num"><Badge tone="blue">{c.issuedCount}</Badge></td>
+              <td className="num"><Badge tone="green">{c.redeemedCount}</Badge></td>
+              <td className="num"><Badge tone="orange">{c.expiredCount}</Badge></td>
+              <td className="num"><Badge tone="red">{c.revokedCount}</Badge></td>
               <td>{formatYmd(c.createdAt)}</td>
+              <td>
+                <ActRow>
+                  <Button2
+                    $variant="primary"
+                    disabled={visitMut.isPending}
+                    onClick={() => onCheckIn(c.id)}
+                    aria-busy={visitMut.isPending}
+                  >
+                    {visitMut.isPending ? "처리중…" : "체크인(+1)"}
+                  </Button2>
+                  <Button2 $variant="ghost" onClick={() => onOpenDetail(c.id)}>상세</Button2>
+                </ActRow>
+              </td>
             </tr>
           ))}
         </tbody>
       </Table>
+
+      <CustomerDetailDrawer
+        open={openDetail}
+        onClose={() => setOpenDetail(false)}
+        customerId={selectedId}
+      />
     </Wrap>
   );
 }
 
-/** utils */
 function getValue(c: Customer, k: SortKey) {
   return c[k];
 }
@@ -219,7 +264,47 @@ function arrow(key: SortKey, dir: "asc" | "desc", me: SortKey) {
   return dir === "asc" ? "▲" : "▼";
 }
 
-/** styles */
+const Button2 = styled.button<{ $variant?: "primary" | "ghost" }>`
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .04s ease, box-shadow .2s ease, background-color .2s ease, border-color .2s ease;
+  outline: none;
+
+  ${({ $variant, theme }) =>
+    $variant === "primary"
+      ? `
+        background: ${theme.colors.primary};
+        color: #fff;
+        box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 4px 10px rgba(0,0,0,.06);
+        &:hover { filter: brightness(0.97); }
+        &:active { transform: translateY(1px); }
+        &:focus-visible { box-shadow: 0 0 0 3px rgba(36,86,232,.25); }
+      `
+      : `
+        background: ${theme.colors.cardBg};
+        color: #333;
+        border-color: ${theme.colors.border};
+        &:hover { background: #f6f8fb; }
+        &:active { transform: translateY(1px); }
+        &:focus-visible { box-shadow: 0 0 0 3px rgba(0,0,0,.06); }
+      `
+  }
+
+  &:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+`;
+
+const ActRow = styled.div`display:flex; gap:8px; align-items:center;`;
+
 const Wrap = styled.div`
   padding: 32px;
   max-width: 1200px;
