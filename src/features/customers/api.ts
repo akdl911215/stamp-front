@@ -16,42 +16,53 @@ export async function createVisit(payload: { customerId: string; idempotencyKey:
 }
 
 export async function getCustomerDetail(id: string) {
-  const { data } = await axios.get(`/customers?id=${id}`);
+  console.log('id : ', id)
+  const URL = `/customers?id=${(id)}`
+  console.log('URL : ', URL)
 
-  const raw =
-    (data && (data.customer || (Array.isArray(data.customers) ? data.customers[0] : null))) ?? null;
+  const { data } = await axios.get(URL);
+  console.log('data : ', data)
 
-  if (!raw) throw new Error("Customer not found");
+  // 실제 응답이 { customers: [...] } 라면 이렇게 안전하게 파싱
+  const arr = Array.isArray(data?.customers) ? data.customers : Array.isArray(data) ? data : [];
+  console.log('arr : ', arr)
+  const item = arr[0];
+  console.log('item : ', item)
 
-  const coupons = Array.isArray(raw.rewardCoupons)
-    ? raw.rewardCoupons.map((rc: any) => ({
-        id: rc.id,
-        code: rc.code,
-        status: rc.status as "ISSUED" | "REDEEMED" | "EXPIRED" | "REVOKED",
-        issuedAt: rc.issuedAt ?? rc.createdAt ?? null,
-        expiresAt: rc.expiresAt ?? null,
-        usedAt: rc.usedAt ?? null,
-      }))
-    : [];
+  // 없으면 null을 반환(404 수준의 "데이터 없음"은 에러로 던지지 않음)
+  if (!item) return null;
 
-  
-  const countBy = (s: string) => coupons.filter((c) => c.status === s).length;
-
+  // 타입/필드 정규화(프런트 기대 스키마로 매핑)
   return {
-    id: raw.id,
-    tenantId: raw.tenantId,
-    name: raw.name ?? null,
-    phone: raw.phone,
-    stampCount: raw.stampCount ?? 0,
-    createdAt: raw.createdAt,
-    updatedAt: raw.updatedAt ?? null,
+    id: item.id,
+    tenantId: item.tenantId,
+    name: item.name ?? null,
+    phone: item.phone,
+    stampCount: Number(item.stampCount ?? 0),
+    createdAt: item.createdAt ?? item.created_at ?? null,
+    updatedAt: item.updatedAt ?? item.updated_at ?? null,
 
-    couponCount: coupons.length,
-    issuedCount: countBy("ISSUED"),
-    redeemedCount: countBy("REDEEMED"),
-    expiredCount: countBy("EXPIRED"),
-    revokedCount: countBy("REVOKED"),
+    couponCount: Number(item.couponCount ?? 0),
+    issuedCount: Number(item.issuedCount ?? 0),
+    redeemedCount: Number(item.redeemedCount ?? 0),
+    expiredCount: Number(item.expiredCount ?? 0),
+    revokedCount: Number(item.revokedCount ?? 0),
 
-    coupons,
+    coupons: Array.isArray(item.coupons) ? item.coupons.map((c: any) => ({
+      id: c.id,
+      code: c.code,
+      status: c.status, // "ISSUED"|"REDEEMED"|"EXPIRED"|"REVOKED"
+      issuedAt: c.issuedAt ?? c.issued_at ?? null,
+      expiresAt: c.expiresAt ?? c.expires_at ?? null,
+      usedAt: c.usedAt ?? c.used_at ?? null,
+    })) : [],
+  } as {
+    id: string; tenantId: string; name: string | null; phone: string;
+    stampCount: number; createdAt: string | null; updatedAt: string | null;
+    couponCount: number; issuedCount: number; redeemedCount: number; expiredCount: number; revokedCount: number;
+    coupons: Array<{
+      id: string; code: string; status: "ISSUED"|"REDEEMED"|"EXPIRED"|"REVOKED";
+      issuedAt: string | null; expiresAt: string | null; usedAt: string | null;
+    }>;
   };
 }

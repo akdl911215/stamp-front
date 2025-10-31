@@ -6,11 +6,23 @@ import { getCustomerDetail } from "../api";
 export function CustomerDetailDrawer({
   open, onClose, customerId,
 }: { open: boolean; onClose: () => void; customerId: string | null; }) {
+
+    useEffect(() => {
+        console.log('open : ' , open)
+        console.log('customerId : ' , customerId)
+        console.log('onClose : ', onClose)
+    }, [open, customerId, onClose])
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["customer-detail", customerId],
     queryFn: () => getCustomerDetail(customerId!),
     enabled: open && !!customerId,
   });
+  useEffect(() => {
+    console.log('data : ', data)
+    console.log('isLoading : ', isLoading)
+    console.log('isError : ', isError)
+  }, [data, isLoading, isError])
 
   useEffect(() => {
     function onEsc(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
