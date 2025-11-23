@@ -1,5 +1,17 @@
 import axios from "@/shared/lib/axios";
 
+export async function createCustomer(payload: { name?: string; phone: string }) {
+  console.log("createCustomer payload:", payload);
+
+  const { data } = await axios.post("/admin/customers", payload, {
+    withCredentials: false, 
+  });
+
+  console.log("createCustomer data:", data);
+  return data;
+}
+
+
 export async function getCustomers() {
   const { data } = await axios.get("/admin/customers/tenant");
   console.log('getCustomers data : ', data);
