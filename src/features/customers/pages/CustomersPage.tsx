@@ -133,9 +133,9 @@ export default function CustomersPage() {
   if (isError) {
     return <Center>에러가 발생했습니다. {(error as Error).message}</Center>;
   }
-  if (!data?.length) {
-    return <Center>현재 등록된 고객이 없습니다.</Center>;
-  }
+  // if (!data?.length) {
+  //   return <Center>현재 등록된 고객이 없습니다.</Center>;
+  // }
 
  
   const onCheckIn = (id: string) => visitMut.mutate(id);
