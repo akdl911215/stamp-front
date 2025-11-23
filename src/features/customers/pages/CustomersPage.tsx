@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import styled from "styled-components";
-import { createVisit, getCustomers } from "../api";
+import { createCustomer, createVisit, getCustomers } from "../api";
 import { Spinner } from "@/shared/ui/Spinner";
 import { setUuidv4 } from "@/shared/lib/setUuidv4";
 import { CustomerDetailDrawer } from "../components/CustomerDetailDrawer";
+import { EmptyBox } from "@/shared/ui/EmptyBox";
 
 interface Customer {
   id: string;
@@ -54,6 +55,20 @@ export default function CustomersPage() {
     },
   });
 
+    const createCustomerMut = useMutation({
+    mutationFn: (payload: { name?: string; phone: string }) =>
+      createCustomer(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      setNewName("");
+      setNewPhone("");
+      setOpenCreate(false);
+    },
+    onError: () => {
+      alert("고객 등록 중 오류가 발생했습니다.");
+    },
+  });
+
 
   const [q, setQ] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
@@ -63,6 +78,10 @@ export default function CustomersPage() {
 
   const [openDetail, setOpenDetail] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const [openCreate, setOpenCreate] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
 
   const filtered = useMemo(() => {
     if (!data) return [];
@@ -133,9 +152,49 @@ export default function CustomersPage() {
   if (isError) {
     return <Center>에러가 발생했습니다. {(error as Error).message}</Center>;
   }
-  // if (!data?.length) {
-  //   return <Center>현재 등록된 고객이 없습니다.</Center>;
-  // }
+
+  if (!data || data.length === 0) {
+    return (
+      <Wrap>
+        <Header>
+          <div>
+            <Title>고객 리스트</Title>
+          </div>
+        </Header>
+        <EmptyBox
+          title="아직 등록된 고객이 없습니다."
+          description="고객을 추가하고 스탬프 적립을 시작하세요."
+        >
+          <Button2
+            $variant="primary"
+            onClick={() => setOpenCreate(true)}
+          >
+            고객 등록하기
+          </Button2>
+        </EmptyBox>
+        {/* 팝업을 여기서도 렌더링 */}
+        <CustomerCreateModal
+          open={openCreate}
+          onClose={() => setOpenCreate(false)}
+          name={newName}
+          phone={newPhone}
+          onChangeName={setNewName}
+          onChangePhone={setNewPhone}
+          onSubmit={() => {
+            if (!newPhone.trim()) {
+              alert("전화번호는 필수입니다.");
+              return;
+            }
+            createCustomerMut.mutate({
+              name: newName.trim() || undefined,
+              phone: newPhone.trim(),
+            });
+          }}
+          loading={createCustomerMut.isPending}
+        />
+      </Wrap>
+    );
+  }
 
  
   const onCheckIn = (id: string) => visitMut.mutate(id);
@@ -159,6 +218,12 @@ export default function CustomersPage() {
             placeholder="이름/전화로 검색"
           />
         </Search>
+        <Button2
+            $variant="primary"
+            onClick={() => setOpenCreate(true)}
+          >
+            신규 고객
+        </Button2>
       </Header>
 
       <KPIGrid>
@@ -409,3 +474,110 @@ const Badge = styled.span<{ tone?: "blue" | "green" | "orange" | "red" }>`
     : tone === "red" ? "#c2152a"
     : "#333"};
 `;
+
+interface CustomerCreateModalProps {
+  open: boolean;
+  onClose: () => void;
+  name: string;
+  phone: string;
+  onChangeName: (v: string) => void;
+  onChangePhone: (v: string) => void;
+  onSubmit: () => void;
+  loading?: boolean;
+}
+
+function CustomerCreateModal({
+  open,
+  onClose,
+  name,
+  phone,
+  onChangeName,
+  onChangePhone,
+  onSubmit,
+  loading,
+}: CustomerCreateModalProps) {
+  if (!open) return null;
+
+  return (
+    <ModalBackdrop onClick={onClose}>
+      <ModalBox onClick={(e) => e.stopPropagation()}>
+        <h2>신규 고객 등록</h2>
+        <p style={{ marginBottom: 16, fontSize: 13, color: "#666" }}>
+          이름은 선택, 전화번호는 필수입니다.
+        </p>
+        <ModalField>
+          <label>이름 (선택)</label>
+          <input
+            value={name}
+            onChange={(e) => onChangeName(e.target.value)}
+            placeholder="예: 이정현"
+          />
+        </ModalField>
+        <ModalField>
+          <label>전화번호 *</label>
+          <input
+            value={phone}
+            onChange={(e) => onChangePhone(e.target.value)}
+            placeholder="예: 01012345678"
+          />
+        </ModalField>
+        <ModalActions>
+          <Button2 $variant="ghost" onClick={onClose}>
+            취소
+          </Button2>
+          <Button2
+            $variant="primary"
+            disabled={loading || !phone.trim()}
+            onClick={onSubmit}
+          >
+            {loading ? "등록 중…" : "등록"}
+          </Button2>
+        </ModalActions>
+      </ModalBox>
+    </ModalBackdrop>
+  );
+}
+
+const ModalBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+`;
+
+const ModalBox = styled.div`
+  width: 100%;
+  max-width: 420px;
+  background: ${({ theme }) => theme.colors.cardBg};
+  border-radius: 16px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
+  padding: 24px 24px 20px;
+`;
+
+const ModalField = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+  label {
+    font-size: 13px;
+    color: ${({ theme }) => theme.colors.muted};
+  }
+  input {
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid ${({ theme }) => theme.colors.border};
+    background: ${({ theme }) => theme.colors.bg};
+  }
+`;
+
+const ModalActions = styled.div`
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+`;
+
