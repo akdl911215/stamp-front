@@ -118,6 +118,26 @@ export default function CustomersPage() {
         onClose={() => setOpenDetail(false)}
         customerId={selectedId}
       />
+
+      <CustomerCreateModal
+        open={openCreate}
+        onClose={() => setOpenCreate(false)}
+        name={newName}
+        phone={newPhone}
+        onChangeName={setNewName}
+        onChangePhone={setNewPhone}
+        onSubmit={() => {
+          if (!newPhone.trim()) {
+            alert("전화번호는 필수입니다.");
+            return;
+          }
+          createCustomerMut.mutate({
+            name: newName.trim() || undefined,
+            phone: newPhone.trim(),
+          });
+        }}
+        loading={createCustomerMut.isPending}
+    />
     </Wrap>
   );
 }
