@@ -28,10 +28,10 @@ export function CustomerCreateModal({
       <ModalBox onClick={(e) => e.stopPropagation()}>
         <h2>신규 고객 등록</h2>
         <p style={{ marginBottom: 16, fontSize: 13, color: "#666" }}>
-          이름은 선택, 전화번호는 필수입니다.
+          이름, 전화번호 필수입니다.
         </p>
         <ModalField>
-          <label>이름 (선택)</label>
+          <label>이름</label>
           <input
             value={name}
             onChange={(e) => onChangeName(e.target.value)}

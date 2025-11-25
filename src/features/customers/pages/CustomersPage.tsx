@@ -28,7 +28,14 @@ export default function CustomersPage() {
     setQ,
   } = useCustomers();
 
-  const { visitMut, createCustomerMut } = useCustomerMutations();
+  const { visitMut, createCustomerMut } = useCustomerMutations({
+    onSuccessCreate: () => {
+      setOpenCreate(false);
+      setNewName("");
+      setNewPhone("");
+    },
+  });
+
   useEffect(() => {
     console.log('visitMut : ', visitMut)
     console.log('createCustmomerMut : ', createCustomerMut)
@@ -40,6 +47,12 @@ export default function CustomersPage() {
     setSelectedId(id);
     setOpenDetail(true);
   };
+
+  const onCloseModal = () => {
+    setOpenCreate(false);
+    setNewName("");
+    setNewPhone("");
+  }
 
   if (isLoading) {
     return (
@@ -74,7 +87,7 @@ export default function CustomersPage() {
         {/* 팝업을 여기서도 렌더링 */}
         <CustomerCreateModal
           open={openCreate}
-          onClose={() => setOpenCreate(false)}
+          onClose={onCloseModal}
           name={newName}
           phone={newPhone}
           onChangeName={setNewName}
@@ -121,7 +134,7 @@ export default function CustomersPage() {
 
       <CustomerCreateModal
         open={openCreate}
-        onClose={() => setOpenCreate(false)}
+        onClose={onCloseModal}
         name={newName}
         phone={newPhone}
         onChangeName={setNewName}

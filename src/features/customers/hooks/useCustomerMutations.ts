@@ -3,7 +3,7 @@ import { createCustomer, createVisit } from "../api";
 import { setUuidv4 } from "@/shared/lib/setUuidv4";
 import type { Customer } from "../types";
 
-export function useCustomerMutations() {
+export function useCustomerMutations(opts?: { readonly onSuccessCreate?: () => void }) {
   const qc = useQueryClient();
 
   const visitMut = useMutation({
@@ -46,7 +46,11 @@ export function useCustomerMutations() {
       createCustomer(payload),
 
     onSuccess: () => {
+      // 리스트 리패치
       qc.invalidateQueries({ queryKey: ["customers"] });
+
+      // 고객 등록 성공 시 모달 닫기
+      opts?.onSuccessCreate?.();
     },
 
     onError: () => {
