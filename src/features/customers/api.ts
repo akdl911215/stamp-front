@@ -35,16 +35,13 @@ export async function getCustomerDetail(id: string) {
   const { data } = await axios.get(URL);
   console.log('data : ', data)
 
-  // 실제 응답이 { customers: [...] } 라면 이렇게 안전하게 파싱
   const arr = Array.isArray(data?.customers) ? data.customers : Array.isArray(data) ? data : [];
   console.log('arr : ', arr)
   const item = arr[0];
   console.log('item : ', item)
 
-  // 없으면 null을 반환(404 수준의 "데이터 없음"은 에러로 던지지 않음)
   if (!item) return null;
 
-  // 타입/필드 정규화(프런트 기대 스키마로 매핑)
   return {
     id: item.id,
     tenantId: item.tenantId,

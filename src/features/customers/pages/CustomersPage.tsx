@@ -84,7 +84,7 @@ export default function CustomersPage() {
             고객 등록하기
           </Button2>
         </EmptyBox>
-        {/* 팝업을 여기서도 렌더링 */}
+
         <CustomerCreateModal
           open={openCreate}
           onClose={onCloseModal}
