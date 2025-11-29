@@ -1,4 +1,5 @@
 import axios from "@/shared/lib/axios";
+import { readonly } from "zod";
 
 export async function createCustomer(payload: { readonly name?: string; readonly phone: string }) {
   console.log("createCustomer payload:", payload);
@@ -19,12 +20,12 @@ export async function getCustomers() {
   return data;
 }
 
-export async function createVisit(payload: { customerId: string; idempotencyKey: string }) {
+export async function createVisit(payload: { readonly customerId: string; readonly idempotencyKey: string }) {
   console.log('createVisit payload : ', payload);
   const { data } = await axios.post("/visits", payload);
   console.log('createVisit data : ', data);
 
-  return data as { total: number };
+  return data as { readonly total: number };
 }
 
 export async function getCustomerDetail(id: string) {
