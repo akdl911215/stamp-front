@@ -1,5 +1,28 @@
 import axios from "@/shared/lib/axios";
-import { readonly } from "zod";
+
+type RedeemCouponRequest = {
+  readonly couponId: string;
+};
+
+type RedeemCouponResponse = {
+  readonly id: string;
+  readonly code: string;
+  readonly status: "ISSUED" | "REDEEMED" | "EXPIRED" | "REVOKED";
+  readonly issuedAt: string | null;
+  readonly expiresAt: string | null;
+  readonly usedAt: string | null;
+}
+
+export async function redeemCoupon(payload: RedeemCouponRequest) {
+  console.log("redeemCoupon payload:", payload);
+
+  const { couponId } = payload;
+
+  const { data } = await axios.post(`/coupons/${couponId}/redeem`);
+
+  console.log("redeemCoupon data:", data);
+  return data as RedeemCouponResponse;
+}
 
 export async function createCustomer(payload: { readonly name?: string; readonly phone: string }) {
   console.log("createCustomer payload:", payload);

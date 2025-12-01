@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCustomerDetail /*, redeemCoupon */ } from "../api";
+import { getCustomerDetail, /*, redeemCoupon */ 
+redeemCoupon} from "../api";
 import { Badge, Box, Dim, Head, KPI, Label, List, Muted, Panel, Tbl, UseButton, Val } from "../styles/customerDetailDrawer.styles";
 import { formatYmd, formatYmdHm } from "@/shared/utils/date.utils";
 import { toneOf } from "../utils/coupon.utils";
@@ -32,7 +33,7 @@ export function CustomerDetailDrawer({
 
   // 쿠폰 사용 mutation (API 연결 후 mutationFn 주석 해제)
   const redeemMutation = useMutation({
-    // mutationFn: (couponId: string) => redeemCoupon(couponId),
+    mutationFn: (couponId: string) => redeemCoupon({ couponId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customer-detail", customerId] });
       queryClient.invalidateQueries({ queryKey: ["customers"] });
@@ -59,7 +60,7 @@ export function CustomerDetailDrawer({
 
   const handleUseCoupon = (couponId: string) => {
     if (!window.confirm("이 쿠폰을 사용 처리할까요?")) return;
-    // redeemMutation.mutate(couponId);
+    redeemMutation.mutate(couponId);
   };
 
   return (
