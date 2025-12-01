@@ -123,7 +123,7 @@ export function CustomerDetailDrawer({
               <Tbl>
                 <thead>
                   <tr>
-                    <th>코드</th>
+                    <th>발급 순서</th>
                     <th>상태</th>
                     <th>발급일</th>
                     <th>만료일</th>
@@ -132,30 +132,33 @@ export function CustomerDetailDrawer({
                   </tr>
                 </thead>
                 <tbody>
-                  {data.coupons.map((c) => (
-                    <tr key={c.id}>
-                      <td>{c.code}</td>
-                      <td>
-                        <Badge tone={toneOf(c.status)}>{c.status}</Badge>
-                      </td>
-                      <td>{formatYmdHm(c.issuedAt)}</td>
-                      <td>{c.expiresAt ? formatYmdHm(c.expiresAt) : "-"}</td>
-                      <td>{c.usedAt ? formatYmdHm(c.usedAt) : "-"}</td>
-                      <td>
-                        {c.status === "ISSUED" ? (
-                          <UseButton
-                            type="button"
-                            disabled={redeemMutation.isPending}
-                            onClick={() => handleUseCoupon(c.id)}
-                          >
-                            {redeemMutation.isPending ? "처리 중…" : "사용하기"}
-                          </UseButton>
-                        ) : (
-                          <Muted>-</Muted>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {data.coupons.map((c, index) => { 
+                    const reverseIndex = data.coupons.length - index;
+                    return (
+                        <tr key={c.id}>
+                          <td>{reverseIndex}</td>
+                          <td>
+                            <Badge tone={toneOf(c.status)}>{c.status}</Badge>
+                          </td>
+                          <td>{formatYmdHm(c.issuedAt)}</td>
+                          <td>{c.expiresAt ? formatYmdHm(c.expiresAt) : "-"}</td>
+                          <td>{c.usedAt ? formatYmdHm(c.usedAt) : "-"}</td>
+                          <td>
+                            {c.status === "ISSUED" ? (
+                              <UseButton
+                                type="button"
+                                disabled={redeemMutation.isPending}
+                                onClick={() => handleUseCoupon(c.id)}
+                              >
+                                {redeemMutation.isPending ? "처리 중…" : "사용하기"}
+                              </UseButton>
+                            ) : (
+                              <Muted>-</Muted>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                  })}
                 </tbody>
               </Tbl>
             </Box>
